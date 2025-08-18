@@ -1,6 +1,4 @@
-<?php require_once('header.php'); 
-require_once("admin/inc/config.php");
-?>
+<?php require_once('header.php'); ?>
 
 <?php
 $statement = $pdo->prepare("SELECT * FROM tbl_settings WHERE id=1");
@@ -121,166 +119,396 @@ foreach ($result as $row)
 </div>
 <?php endif; ?>
 
-
+<?php if($home_featured_product_on_off == 1): ?>
 <div class="product pt_70 pb_70">
     <div class="container">
         <div class="row">
             <div class="col-md-12">
-                <ul class="nav nav-tabs" id="productTabs" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="featured-tab" data-toggle="tab" href="#featured" role="tab" aria-controls="featured" aria-selected="true">Featured</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="latest-tab" data-toggle="tab" href="#latest" role="tab" aria-controls="latest" aria-selected="false">Latest</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="popular-tab" data-toggle="tab" href="#popular" role="tab" aria-controls="popular" aria-selected="false">Popular</a>
-                    </li>
-                </ul>
-                <div class="tab-content pt-4" id="productTabsContent">
-                    <div class="tab-pane fade show active" id="featured" role="tabpanel" aria-labelledby="featured-tab">
-                        <div class="product-carousel" id="featured-products"></div>
-                        <div id="featured-loading" style="text-align:center;display:none;">
-                            <img src="assets/img/loading.gif" alt="Loading..." style="width:40px;">
+                <div class="headline">
+                    <h2><?php echo $featured_product_title; ?></h2>
+                    <h3><?php echo $featured_product_subtitle; ?></h3>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+
+                <div class="product-carousel">
+                    
+                    <?php
+                    $statement = $pdo->prepare("SELECT * FROM tbl_product WHERE p_is_featured=? AND p_is_active=? LIMIT ".$total_featured_product_home);
+                    $statement->execute(array(1,1));
+                    $result = $statement->fetchAll(PDO::FETCH_ASSOC);                            
+                    foreach ($result as $row) {
+                        ?>
+                        <div class="item">
+                            <div class="thumb">
+                                <div class="photo" style="background-image:url(assets/uploads/<?php echo $row['p_featured_photo']; ?>);"></div>
+                                <div class="overlay"></div>
+                            </div>
+                            <div class="text">
+                                <h3><a href="product.php?id=<?php echo $row['p_id']; ?>"><?php echo $row['p_name']; ?></a></h3>
+                                <h4>
+                                    $<?php echo $row['p_current_price']; ?> 
+                                    <?php if($row['p_old_price'] != ''): ?>
+                                    <del>
+                                        $<?php echo $row['p_old_price']; ?>
+                                    </del>
+                                    <?php endif; ?>
+                                </h4>
+                                <div class="rating">
+                                    <?php
+                                    $t_rating = 0;
+                                    $statement1 = $pdo->prepare("SELECT * FROM tbl_rating WHERE p_id=?");
+                                    $statement1->execute(array($row['p_id']));
+                                    $tot_rating = $statement1->rowCount();
+                                    if($tot_rating == 0) {
+                                        $avg_rating = 0;
+                                    } else {
+                                        $result1 = $statement1->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($result1 as $row1) {
+                                            $t_rating = $t_rating + $row1['rating'];
+                                        }
+                                        $avg_rating = $t_rating / $tot_rating;
+                                    }
+                                    ?>
+                                    <?php
+                                    if($avg_rating == 0) {
+                                        echo '';
+                                    }
+                                    elseif($avg_rating == 1.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                        ';
+                                    } 
+                                    elseif($avg_rating == 2.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                        ';
+                                    }
+                                    elseif($avg_rating == 3.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                        ';
+                                    }
+                                    elseif($avg_rating == 4.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                        ';
+                                    }
+                                    else {
+                                        for($i=1;$i<=5;$i++) {
+                                            ?>
+                                            <?php if($i>$avg_rating): ?>
+                                                <i class="fa fa-star-o"></i>
+                                            <?php else: ?>
+                                                <i class="fa fa-star"></i>
+                                            <?php endif; ?>
+                                            <?php
+                                        }
+                                    }
+                                    ?>
+                                </div>
+
+                                <?php if($row['p_qty'] == 0): ?>
+                                    <div class="out-of-stock">
+                                        <div class="inner">
+                                            Out Of Stock
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <p><a href="product.php?id=<?php echo $row['p_id']; ?>"><i class="fa fa-shopping-cart"></i> Add to Cart</a></p>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                    </div>
-                    <div class="tab-pane fade" id="latest" role="tabpanel" aria-labelledby="latest-tab">
-                        <div class="product-carousel" id="latest-products"></div>
-                        <div id="latest-loading" style="text-align:center;display:none;">
-                            <img src="assets/img/loading.gif" alt="Loading..." style="width:40px;">
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="popular" role="tabpanel" aria-labelledby="popular-tab">
-                        <div class="product-carousel" id="popular-products"></div>
-                        <div id="popular-loading" style="text-align:center;display:none;">
-                            <img src="assets/img/loading.gif" alt="Loading..." style="width:40px;">
-                        </div>
-                    </div>
+                        <?php
+                    }
+                    ?>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<?php endif; ?>
+
+
+<?php if($home_latest_product_on_off == 1): ?>
+<div class="product bg-gray pt_70 pb_30">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="headline">
+                    <h2><?php echo $latest_product_title; ?></h2>
+                    <h3><?php echo $latest_product_subtitle; ?></h3>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+
+                <div class="product-carousel">
+
+                    <?php
+                    $statement = $pdo->prepare("SELECT * FROM tbl_product WHERE p_is_active=? ORDER BY p_id DESC LIMIT ".$total_latest_product_home);
+                    $statement->execute(array(1));
+                    $result = $statement->fetchAll(PDO::FETCH_ASSOC);                            
+                    foreach ($result as $row) {
+                        ?>
+                        <div class="item">
+                            <div class="thumb">
+                                <div class="photo" style="background-image:url(assets/uploads/<?php echo $row['p_featured_photo']; ?>);"></div>
+                                <div class="overlay"></div>
+                            </div>
+                            <div class="text">
+                                <h3><a href="product.php?id=<?php echo $row['p_id']; ?>"><?php echo $row['p_name']; ?></a></h3>
+                                <h4>
+                                    $<?php echo $row['p_current_price']; ?> 
+                                    <?php if($row['p_old_price'] != ''): ?>
+                                    <del>
+                                        $<?php echo $row['p_old_price']; ?>
+                                    </del>
+                                    <?php endif; ?>
+                                </h4>
+                                <div class="rating">
+                                    <?php
+                                    $t_rating = 0;
+                                    $statement1 = $pdo->prepare("SELECT * FROM tbl_rating WHERE p_id=?");
+                                    $statement1->execute(array($row['p_id']));
+                                    $tot_rating = $statement1->rowCount();
+                                    if($tot_rating == 0) {
+                                        $avg_rating = 0;
+                                    } else {
+                                        $result1 = $statement1->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($result1 as $row1) {
+                                            $t_rating = $t_rating + $row1['rating'];
+                                        }
+                                        $avg_rating = $t_rating / $tot_rating;
+                                    }
+                                    ?>
+                                    <?php
+                                    if($avg_rating == 0) {
+                                        echo '';
+                                    }
+                                    elseif($avg_rating == 1.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                        ';
+                                    } 
+                                    elseif($avg_rating == 2.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                        ';
+                                    }
+                                    elseif($avg_rating == 3.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                        ';
+                                    }
+                                    elseif($avg_rating == 4.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                        ';
+                                    }
+                                    else {
+                                        for($i=1;$i<=5;$i++) {
+                                            ?>
+                                            <?php if($i>$avg_rating): ?>
+                                                <i class="fa fa-star-o"></i>
+                                            <?php else: ?>
+                                                <i class="fa fa-star"></i>
+                                            <?php endif; ?>
+                                            <?php
+                                        }
+                                    }
+                                    ?>
+                                </div>
+                                <?php if($row['p_qty'] == 0): ?>
+                                    <div class="out-of-stock">
+                                        <div class="inner">
+                                            Out Of Stock
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <p><a href="product.php?id=<?php echo $row['p_id']; ?>"><i class="fa fa-shopping-cart"></i> Add to Cart</a></p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php
+                    }
+                    ?>
+
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+
+<?php if($home_popular_product_on_off == 1): ?>
+<div class="product pt_70 pb_70">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="headline">
+                    <h2><?php echo $popular_product_title; ?></h2>
+                    <h3><?php echo $popular_product_subtitle; ?></h3>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+
+                <div class="product-carousel">
+
+                    <?php
+                    $statement = $pdo->prepare("SELECT * FROM tbl_product WHERE p_is_active=? ORDER BY p_total_view DESC LIMIT ".$total_popular_product_home);
+                    $statement->execute(array(1));
+                    $result = $statement->fetchAll(PDO::FETCH_ASSOC);                            
+                    foreach ($result as $row) {
+                        ?>
+                        <div class="item">
+                            <div class="thumb">
+                                <div class="photo" style="background-image:url(assets/uploads/<?php echo $row['p_featured_photo']; ?>);"></div>
+                                <div class="overlay"></div>
+                            </div>
+                            <div class="text">
+                                <h3><a href="product.php?id=<?php echo $row['p_id']; ?>"><?php echo $row['p_name']; ?></a></h3>
+                                <h4>
+                                    $<?php echo $row['p_current_price']; ?> 
+                                    <?php if($row['p_old_price'] != ''): ?>
+                                    <del>
+                                        $<?php echo $row['p_old_price']; ?>
+                                    </del>
+                                    <?php endif; ?>
+                                </h4>
+                                <div class="rating">
+                                    <?php
+                                    $t_rating = 0;
+                                    $statement1 = $pdo->prepare("SELECT * FROM tbl_rating WHERE p_id=?");
+                                    $statement1->execute(array($row['p_id']));
+                                    $tot_rating = $statement1->rowCount();
+                                    if($tot_rating == 0) {
+                                        $avg_rating = 0;
+                                    } else {
+                                        $result1 = $statement1->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($result1 as $row1) {
+                                            $t_rating = $t_rating + $row1['rating'];
+                                        }
+                                        $avg_rating = $t_rating / $tot_rating;
+                                    }
+                                    ?>
+                                    <?php
+                                    if($avg_rating == 0) {
+                                        echo '';
+                                    }
+                                    elseif($avg_rating == 1.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                        ';
+                                    } 
+                                    elseif($avg_rating == 2.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                        ';
+                                    }
+                                    elseif($avg_rating == 3.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                            <i class="fa fa-star-o"></i>
+                                        ';
+                                    }
+                                    elseif($avg_rating == 4.5) {
+                                        echo '
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star"></i>
+                                            <i class="fa fa-star-half-o"></i>
+                                        ';
+                                    }
+                                    else {
+                                        for($i=1;$i<=5;$i++) {
+                                            ?>
+                                            <?php if($i>$avg_rating): ?>
+                                                <i class="fa fa-star-o"></i>
+                                            <?php else: ?>
+                                                <i class="fa fa-star"></i>
+                                            <?php endif; ?>
+                                            <?php
+                                        }
+                                    }
+                                    ?>
+                                </div>
+                                <?php if($row['p_qty'] == 0): ?>
+                                    <div class="out-of-stock">
+                                        <div class="inner">
+                                            Out Of Stock
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <p><a href="product.php?id=<?php echo $row['p_id']; ?>"><i class="fa fa-shopping-cart"></i> Add to Cart</a></p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php
+                    }
+                    ?>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 
 
 
 <?php require_once('footer.php'); ?>
-
-<!-- Ensure consistent product grid for all tabs -->
-<style>
-/* Stronger rules to override carousel/plugin CSS */
-.product-carousel,
-#featured-products,
-#latest-products,
-#popular-products {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 20px !important;
-}
-.product-carousel .item,
-#featured-products .item,
-#latest-products .item,
-#popular-products .item {
-  display: block !important;
-  flex: 0 0 23% !important; /* 4 items per row on desktop */
-  max-width: 23% !important;
-  box-sizing: border-box !important;
-  margin-bottom: 20px !important;
-}
-.product-carousel .item .thumb,
-#featured-products .item .thumb,
-#latest-products .item .thumb,
-#popular-products .item .thumb {
-  width: 100% !important;
-  height: 220px !important;
-  overflow: hidden !important;
-}
-.product-carousel .item .photo,
-#featured-products .item .photo,
-#latest-products .item .photo,
-#popular-products .item .photo {
-  width: 100% !important;
-  height: 100% !important;
-  background-size: cover !important;
-  background-position: center center !important;
-}
-@media (max-width: 991px) {
-  .product-carousel .item,
-  #featured-products .item,
-  #latest-products .item,
-  #popular-products .item { flex: 0 0 48% !important; max-width:48% !important; }
-}
-@media (max-width: 575px) {
-  .product-carousel .item,
-  #featured-products .item,
-  #latest-products .item,
-  #popular-products .item { flex: 0 0 100% !important; max-width:100% !important; }
-}
-</style>
-
-<!-- Infinite Scroll JS + Tabs -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" />
-<script>
-$(function(){
-    var featuredLimit = <?php echo (int)$total_featured_product_home; ?>;
-    var latestLimit = <?php echo (int)$total_latest_product_home; ?>;
-    var popularLimit = <?php echo (int)$total_popular_product_home; ?>;
-    var featuredOffset = 0, latestOffset = 0, popularOffset = 0;
-    var featuredEnd = false, latestEnd = false, popularEnd = false;
-    var activeTab = 'featured';
-
-    function loadProducts(type, offset, limit, container, loading, endFlag, setOffset, setEnd) {
-        if(endFlag) return;
-        $(loading).show();
-        $.get('products_ajax.php', {type:type, offset:offset, limit:limit}, function(data){
-            console.log('AJAX response for', type, 'offset', offset, 'limit', limit, ':', data);
-            // Remove whitespace and invisible characters
-            var cleanData = data.replace(/\s+/g, '');
-            if(cleanData === '' || data === null) {
-                setEnd(true);
-            } else {
-                $(container).append(data);
-                // Force visibility for debugging
-                $(container + ' .item').css({display: 'block', opacity: 1, position: 'static', visibility: 'visible'});
-                setOffset(offset+limit);
-            }
-            $(loading).hide();
-        });
-    }
-
-    // Initial load for featured
-    loadProducts('featured', featuredOffset, featuredLimit, '#featured-products', '#featured-loading', featuredEnd, function(v){featuredOffset=v;}, function(v){featuredEnd=v;});
-
-    // Tab click event
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        activeTab = $(e.target).attr('aria-controls');
-        if(activeTab === 'featured' && featuredOffset === 0 && !featuredEnd) {
-            loadProducts('featured', featuredOffset, featuredLimit, '#featured-products', '#featured-loading', featuredEnd, function(v){featuredOffset=v;}, function(v){featuredEnd=v;});
-        }
-        if(activeTab === 'latest' && latestOffset === 0 && !latestEnd) {
-            loadProducts('latest', latestOffset, latestLimit, '#latest-products', '#latest-loading', latestEnd, function(v){latestOffset=v;}, function(v){latestEnd=v;});
-        }
-        if(activeTab === 'popular' && popularOffset === 0 && !popularEnd) {
-            loadProducts('popular', popularOffset, popularLimit, '#popular-products', '#popular-loading', popularEnd, function(v){popularOffset=v;}, function(v){popularEnd=v;});
-        }
-    });
-
-    // Infinite scroll for active tab only
-    $(window).on('scroll', function(){
-        var $container, offset, limit, endFlag, setOffset, setEnd, type, loading;
-        if(activeTab === 'featured') {
-            $container = $('#featured-products'); offset = featuredOffset; limit = featuredLimit; endFlag = featuredEnd; setOffset = function(v){featuredOffset=v;}; setEnd = function(v){featuredEnd=v;}; type = 'featured'; loading = '#featured-loading';
-        } else if(activeTab === 'latest') {
-            $container = $('#latest-products'); offset = latestOffset; limit = latestLimit; endFlag = latestEnd; setOffset = function(v){latestOffset=v;}; setEnd = function(v){latestEnd=v;}; type = 'latest'; loading = '#latest-loading';
-        } else if(activeTab === 'popular') {
-            $container = $('#popular-products'); offset = popularOffset; limit = popularLimit; endFlag = popularEnd; setOffset = function(v){popularOffset=v;}; setEnd = function(v){popularEnd=v;}; type = 'popular'; loading = '#popular-loading';
-        }
-        if($container && $container.length && !endFlag && $(window).scrollTop() + $(window).height() > $container.offset().top + $container.height() - 200) {
-            loadProducts(type, offset, limit, $container, loading, endFlag, setOffset, setEnd);
-        }
-    });
-});
-</script>

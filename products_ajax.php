@@ -1,6 +1,11 @@
-<?php
+ <?php
 
 include("admin/inc/config.php");
+
+require_once('./PHPMailer/src/Exception.php');
+require_once('./path/to/PHPMailer/src/PHPMailer.php');
+require_once('./path/to/PHPMailer/src/SMTP.php');
+
 $type = isset($_GET['type']) ? $_GET['type'] : '';
 $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 8;
