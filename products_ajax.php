@@ -1,10 +1,13 @@
- <?php
+<?php
 
 include("admin/inc/config.php");
 
-require_once('./PHPMailer/src/Exception.php');
-require_once('./path/to/PHPMailer/src/PHPMailer.php');
-require_once('./path/to/PHPMailer/src/SMTP.php');
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require 'PHPMailer/src/Exception.php';
+require 'PHPMailer/src/PHPMailer.php';
+require 'PHPMailer/src/SMTP.php';
 
 $type = isset($_GET['type']) ? $_GET['type'] : '';
 $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
@@ -25,12 +28,77 @@ if ($type == 'featured') {
     echo '';
     exit;
 }
+?>
+<style>
 
+</style>
+<?php
 $result = $statement->fetchAll(PDO::FETCH_ASSOC);
 foreach ($result as $row) {
     ob_start();
     ?>
-    <div class="item">
+  
+  
+            <article class="card">
+                <div class="card__img">
+                    <img src="https://i.postimg.cc/8PkwdTYd/image.png" alt="">
+                </div>
+                <div class="card__name">
+                    <p>AIR ZOOM PEGASUS</p>
+                </div>
+                <div class="card__precis">
+                    <a href="" class="card__icon" ><ion-icon name="heart-outline"></ion-icon></a>
+                    
+                    <div>
+                        <span class="card__preci card__preci--before" style="text-decoration: line-through">$990.00</span>
+                        <span class="card__preci card__preci--now">$749.00</span>
+                    </div>
+                    <a href="" class="card__icon"><ion-icon name="cart-outline"></ion-icon></a>
+                </div>
+            </article>
+            <article class="card">
+                <div class="card__img">
+                    <img src="https://i.postimg.cc/8PkwdTYd/image.png" alt="">
+                </div>
+                <div class="card__name">
+                    <p>AIR ZOOM PEGASUS</p>
+                </div>
+                <div class="card__precis">
+                    <a href="" class="card__icon" ><ion-icon name="heart-outline"></ion-icon></a>
+                    
+                    <div>
+                        <span class="card__preci card__preci--before" style="text-decoration: line-through">$990.00</span>
+                        <span class="card__preci card__preci--now">$749.00</span>
+                    </div>
+                    <a href="" class="card__icon"><ion-icon name="cart-outline"></ion-icon></a>
+                </div>
+            </article>
+            <article class="card">
+                <div class="card__img">
+                    <img src="https://i.postimg.cc/8PkwdTYd/image.png" alt="">
+                </div>
+                <div class="card__name">
+                    <p>AIR ZOOM PEGASUS</p>
+                </div>
+                <div class="card__precis">
+                    <a href="" class="card__icon" ><ion-icon name="heart-outline"></ion-icon></a>
+                    
+                    <div>
+                        <span class="card__preci card__preci--before" style="text-decoration: line-through">$990.00</span>
+                        <span class="card__preci card__preci--now">$749.00</span>
+                    </div>
+                    <a href="" class="card__icon"><ion-icon name="cart-outline"></ion-icon></a>
+                </div>
+            </article>
+
+         
+   
+         
+        <!-- ICONS -->
+        <script src="https://unpkg.com/ionicons@5.0.0/dist/ionicons.js"></script>
+
+
+    <!-- <div class="product-item item">
         <div class="thumb">
             <div class="photo" style="background-image:url(assets/uploads/<?php echo $row['p_featured_photo']; ?>);"></div>
             <div class="overlay"></div>
@@ -96,7 +164,7 @@ foreach ($result as $row) {
                 <p><a href="product.php?id=<?php echo $row['p_id']; ?>"><i class="fa fa-shopping-cart"></i> Add to Cart</a></p>
             <?php endif; ?>
         </div>
-    </div>
+    </div> -->
     <?php
     $html .= ob_get_clean();
 }
