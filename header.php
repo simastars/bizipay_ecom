@@ -242,7 +242,7 @@ foreach ($result as $row) {
 </div>-->
 
 <!-- top bar -->
-<div class="top">
+<div class="top bg-blue">
 	<div class="container">
 		<div class="row">
 			<div class="col-md-6 col-sm-6 col-xs-12">
@@ -338,11 +338,11 @@ foreach ($result as $row) {
 	</div>
 </div>
 
-<div class="nav">
-	<div class="container">
+<div class="nav bg-blue">
+	<div class="container bg-blue">
 		<div class="row">
-			<div class="col-md-12 pl_0 pr_0">
-				<div class="menu-container">
+			<div class="col-md-12 pl_0 pr_0 bg-blue">
+				<div class="menu-container bg-blue">
 					<div class="menu">
 						<ul>
 							<li><a href="index.php">Home</a></li>

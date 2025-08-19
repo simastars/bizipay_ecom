@@ -18,7 +18,7 @@ foreach ($result as $row)
 
 
 <?php if($newsletter_on_off == 1): ?>
-<section class="home-newsletter">
+<section class="home-newsletter bg-blue">
 	<div class="container">
 		<div class="row">
 			<div class="col-md-6 col-md-offset-3">
@@ -120,7 +120,7 @@ This link will be active only for 24 hours.
 
 
 
-<div class="footer-bottom">
+<div class="footer-bottom bg-blue">
 	<div class="container">
 		<div class="row">
 			<div class="col-md-12 copyright">

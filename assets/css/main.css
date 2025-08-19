@@ -68,7 +68,9 @@ a:hover {
 .bg-gray {
   background: #f2f3f3 !important;
 }
-
+.bg-blue {
+  background: #007bff !important;
+}
 .bg-white {
   background: #ffffff !important;
 }

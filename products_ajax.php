@@ -37,79 +37,18 @@ $result = $statement->fetchAll(PDO::FETCH_ASSOC);
 foreach ($result as $row) {
     ob_start();
     ?>
-  
-  
-            <article class="card">
-                <div class="card__img">
-                    <img src="https://i.postimg.cc/8PkwdTYd/image.png" alt="">
-                </div>
-                <div class="card__name">
-                    <p>AIR ZOOM PEGASUS</p>
-                </div>
-                <div class="card__precis">
-                    <a href="" class="card__icon" ><ion-icon name="heart-outline"></ion-icon></a>
-                    
-                    <div>
-                        <span class="card__preci card__preci--before" style="text-decoration: line-through">$990.00</span>
-                        <span class="card__preci card__preci--now">$749.00</span>
-                    </div>
-                    <a href="" class="card__icon"><ion-icon name="cart-outline"></ion-icon></a>
-                </div>
-            </article>
-            <article class="card">
-                <div class="card__img">
-                    <img src="https://i.postimg.cc/8PkwdTYd/image.png" alt="">
-                </div>
-                <div class="card__name">
-                    <p>AIR ZOOM PEGASUS</p>
-                </div>
-                <div class="card__precis">
-                    <a href="" class="card__icon" ><ion-icon name="heart-outline"></ion-icon></a>
-                    
-                    <div>
-                        <span class="card__preci card__preci--before" style="text-decoration: line-through">$990.00</span>
-                        <span class="card__preci card__preci--now">$749.00</span>
-                    </div>
-                    <a href="" class="card__icon"><ion-icon name="cart-outline"></ion-icon></a>
-                </div>
-            </article>
-            <article class="card">
-                <div class="card__img">
-                    <img src="https://i.postimg.cc/8PkwdTYd/image.png" alt="">
-                </div>
-                <div class="card__name">
-                    <p>AIR ZOOM PEGASUS</p>
-                </div>
-                <div class="card__precis">
-                    <a href="" class="card__icon" ><ion-icon name="heart-outline"></ion-icon></a>
-                    
-                    <div>
-                        <span class="card__preci card__preci--before" style="text-decoration: line-through">$990.00</span>
-                        <span class="card__preci card__preci--now">$749.00</span>
-                    </div>
-                    <a href="" class="card__icon"><ion-icon name="cart-outline"></ion-icon></a>
-                </div>
-            </article>
-
-         
-   
-         
-        <!-- ICONS -->
-        <script src="https://unpkg.com/ionicons@5.0.0/dist/ionicons.js"></script>
-
-
-    <!-- <div class="product-item item">
+    <div class="item" data-pid="<?php echo htmlspecialchars($row['p_id'], ENT_QUOTES); ?>">
         <div class="thumb">
-            <div class="photo" style="background-image:url(assets/uploads/<?php echo $row['p_featured_photo']; ?>);"></div>
+            <div class="photo" style="background-image:url(assets/uploads/<?php echo htmlspecialchars($row['p_featured_photo'], ENT_QUOTES); ?>);"></div>
             <div class="overlay"></div>
         </div>
         <div class="text">
-            <h3><a href="product.php?id=<?php echo $row['p_id']; ?>"><?php echo $row['p_name']; ?></a></h3>
+            <h3><a href="product.php?id=<?php echo $row['p_id']; ?>"><?php echo htmlspecialchars($row['p_name'], ENT_QUOTES); ?></a></h3>
             <h4>
-                $<?php echo $row['p_current_price']; ?>
+                $<?php echo htmlspecialchars($row['p_current_price'], ENT_QUOTES); ?>
                 <?php if($row['p_old_price'] != ''): ?>
                 <del>
-                    $<?php echo $row['p_old_price']; ?>
+                    $<?php echo htmlspecialchars($row['p_old_price'], ENT_QUOTES); ?>
                 </del>
                 <?php endif; ?>
             </h4>
@@ -128,32 +67,37 @@ foreach ($result as $row) {
                     }
                     $avg_rating = $t_rating / $tot_rating;
                 }
+                ?>
+                <?php
                 if($avg_rating == 0) {
                     echo '';
                 }
                 elseif($avg_rating == 1.5) {
-                    echo '<i class="fa fa-star"></i><i class="fa fa-star-half-o"></i><i class="fa fa-star-o"></i><i class="fa fa-star-o"></i><i class="fa fa-star-o"></i>';
+                    echo '\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star-half-o"></i>\n                                            <i class="fa fa-star-o"></i>\n                                            <i class="fa fa-star-o"></i>\n                                            <i class="fa fa-star-o"></i>\n                                        ';
                 }
                 elseif($avg_rating == 2.5) {
-                    echo '<i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-half-o"></i><i class="fa fa-star-o"></i><i class="fa fa-star-o"></i>';
+                    echo '\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star-half-o"></i>\n                                            <i class="fa fa-star-o"></i>\n                                            <i class="fa fa-star-o"></i>\n                                        ';
                 }
                 elseif($avg_rating == 3.5) {
-                    echo '<i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-half-o"></i><i class="fa fa-star-o"></i>';
+                    echo '\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star-half-o"></i>\n                                            <i class="fa fa-star-o"></i>\n                                        ';
                 }
                 elseif($avg_rating == 4.5) {
-                    echo '<i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-half-o"></i>';
+                    echo '\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star"></i>\n                                            <i class="fa fa-star-half-o"></i>\n                                        ';
                 }
                 else {
                     for($i=1;$i<=5;$i++) {
-                        if($i>$avg_rating) {
-                            echo '<i class="fa fa-star-o"></i>';
-                        } else {
-                            echo '<i class="fa fa-star"></i>';
-                        }
+                        ?>
+                        <?php if($i>$avg_rating): ?>
+                            <i class="fa fa-star-o"></i>
+                        <?php else: ?>
+                            <i class="fa fa-star"></i>
+                        <?php endif; ?>
+                        <?php
                     }
                 }
                 ?>
             </div>
+
             <?php if($row['p_qty'] == 0): ?>
                 <div class="out-of-stock">
                     <div class="inner">
@@ -164,7 +108,7 @@ foreach ($result as $row) {
                 <p><a href="product.php?id=<?php echo $row['p_id']; ?>"><i class="fa fa-shopping-cart"></i> Add to Cart</a></p>
             <?php endif; ?>
         </div>
-    </div> -->
+    </div>
     <?php
     $html .= ob_get_clean();
 }
