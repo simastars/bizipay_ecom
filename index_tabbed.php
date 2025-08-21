@@ -121,6 +121,8 @@ foreach ($result as $row)
             $btn.prop('disabled', false);
             alert('Could not load products');
         });
+                $(container + ' .item').css({display: 'block', opacity: 1, position: 'static', visibility: 'visible'});
+
     }
 
     // click handler

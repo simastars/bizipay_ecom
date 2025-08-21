@@ -33,5 +33,17 @@ if(!isset($_SESSION['customer'])) {
         </div>
     </div>
 </div>
-
+<div class="user-content">
+   
+    <div class="wallet-balance text-center" style="margin:20px 0;">
+        <?php
+        $statement = $pdo->prepare("SELECT balance FROM tbl_wallet WHERE cust_id=?");
+        $statement->execute([$_SESSION['customer']['cust_id']]);
+        $wallet = $statement->fetch(PDO::FETCH_ASSOC);
+        $balance = $wallet ? $wallet['balance'] : 0;
+        ?>
+        <h4>Wallet Balance: ₦<?php echo number_format($balance,2); ?></h4>
+        <a href="wallet-fund.php" class="btn btn-success">Fund Wallet</a>
+    </div>
+</div>
 <?php require_once('footer.php'); ?>
