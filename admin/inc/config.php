@@ -22,6 +22,7 @@ define("BASE_URL", "");
 
 // Getting Admin url
 define("ADMIN_URL", BASE_URL . "admin" . "/");
+define('PAYSTACK_SECRET', 'sk_test_315fc78a0ab1058182741381e779681773796ffb');
 
 try {
 	$pdo = new PDO("mysql:host={$dbhost};dbname={$dbname}", $dbuser, $dbpass);
