@@ -169,6 +169,7 @@ foreach ($result as $row) {
 		$('#paypal_form').hide();
 		$('#stripe_form').hide();
 		$('#bank_form').hide();
+		$('#wallet_form').hide();
 
         $('#advFieldsStatus').on('change',function() {
             advFieldsStatus = $('#advFieldsStatus').val();
