@@ -1,4 +1,6 @@
-<?php require_once('header.php'); ?>
+<?php require_once('header.php');
+require_once("../mailer.php")
+?>
 
 <?php
 $error_message = '';
@@ -105,9 +107,14 @@ Unit Price: '.$row['unit_price'].'<br>
                    "Content-Type: text/html; charset=ISO-8859-1\r\n";
 
         // Sending email to admin                  
-        mail($to_customer, $subject_text, $message, $headers);
+        // mail($to_customer, $subject_text, $message, $headers);
+        if(sendMail($to_customer, $subject_text, $message, '', $admin_email)){
+$success_message = 'Your email to customer is sent successfully.';
+        } else {
+$error_message = 'Failed to send email to customer.';
+}
+      
         
-        $success_message = 'Your email to customer is sent successfully.';
 
     }
 }

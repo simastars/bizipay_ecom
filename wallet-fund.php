@@ -13,7 +13,7 @@ $cust_id = $_SESSION['customer']['cust_id'];
     <form id="fundWalletForm" method="POST">
         <div class="form-group">
             <label>Amount (₦)</label>
-            <input type="number" name="amount" class="form-control" min="100" required>
+            <input type="number" name="amount" class="form-control" min="1000" required>
         </div>
         <button type="submit" class="btn btn-primary">Proceed to Paystack</button>
     </form>

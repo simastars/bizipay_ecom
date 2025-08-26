@@ -173,11 +173,12 @@ foreach ($result as $row) {
 
         $('#advFieldsStatus').on('change',function() {
             advFieldsStatus = $('#advFieldsStatus').val();
-            if ( advFieldsStatus == '' ) {
-            	$('#paypal_form').hide();
+			if ( advFieldsStatus == '' ) {
+				$('#paypal_form').hide();
 				$('#stripe_form').hide();
 				$('#bank_form').hide();
-            } else if ( advFieldsStatus == 'PayPal' ) {
+				$('#wallet_form').hide();
+			} else if ( advFieldsStatus == 'PayPal' ) {
                	$('#paypal_form').show();
 				$('#stripe_form').hide();
 				$('#bank_form').hide();
@@ -189,6 +190,11 @@ foreach ($result as $row) {
             	$('#paypal_form').hide();
 				$('#stripe_form').hide();
 				$('#bank_form').show();
+			} else if ( advFieldsStatus == 'Wallet' ) {
+				$('#paypal_form').hide();
+				$('#stripe_form').hide();
+				$('#bank_form').hide();
+				$('#wallet_form').show();
             }
         });
 	});

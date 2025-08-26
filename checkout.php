@@ -22,12 +22,18 @@ if (!isset($_SESSION['cart_p_id'])) {
         <h1><?php echo LANG_VALUE_22; ?></h1>
     </div>
 </div>
-
+<div class="page">
+    <div class="container">
+                <p>
+                    <h3 style="margin-top:10px;" class="text-danger"><?php echo $_SESSION['error_message']; ?></h3>
+                </p>
+    </div>
+</div>
 <div class="page">
     <div class="container">
         <div class="row">
             <div class="col-md-12">
-
+                
                 <?php if (!isset($_SESSION['customer'])): ?>
                     <p>
                         <a href="login.php" class="btn btn-md btn-danger"><?php echo LANG_VALUE_160; ?></a>

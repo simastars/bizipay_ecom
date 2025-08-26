@@ -1,4 +1,6 @@
-<?php require_once('header.php'); ?>
+<?php require_once('header.php'); 
+require_once("./mailer.php");
+?>
 
 <?php
 $statement = $pdo->prepare("SELECT * FROM tbl_settings WHERE id=1");
@@ -168,7 +170,12 @@ if (isset($_POST['form1'])) {
                    "Content-Type: text/html; charset=ISO-8859-1\r\n";
         
         // Sending Email
-        mail($to, $subject, $message, $headers);
+
+         if(sendMail($to, $subject, $message, '','admin@gmail.com')){
+$success_message = 'Your email to customer is sent successfully.';
+        } else {
+$error_message = 'Failed to send email to customer.';
+}
 
         unset($_POST['cust_name']);
         unset($_POST['cust_cname']);
