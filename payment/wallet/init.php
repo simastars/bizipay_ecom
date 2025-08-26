@@ -269,21 +269,31 @@ try {
         error_log("Referral debug: buyer_id={$_SESSION['customer']['cust_id']}, referrerId=" . var_export($referrerId, true) . ", refAmount=" . var_export($refAmount, true));
 
         if ($referrerId && $refAmount > 0) {
-            // credit the referrer's wallet (safe upsert)
-            $pdo->beginTransaction();
-            $stmtW = $pdo->prepare("INSERT INTO tbl_wallet (cust_id, balance) VALUES (?, ?) ON DUPLICATE KEY UPDATE balance = balance + VALUES(balance)");
-            $stmtW->execute([$referrerId, $refAmount]);
-            // log wallet transaction for referrer
-            $txRef = 'REFR_' . uniqid();
-            $desc = 'Referral reward from user ' . $_SESSION['customer']['cust_id'];
-            $stmtTx = $pdo->prepare("INSERT INTO tbl_wallet_transactions (cust_id, amount, type, description, ref) VALUES (?, ?, 'credit', ?, ?)");
-            $okTx = $stmtTx->execute([$referrerId, $refAmount, $desc, $txRef]);
-            if ($okTx) {
-                error_log("Referral debug: credited referrer {$referrerId} amount={$refAmount} txref={$txRef}");
+            // ensure we only credit the referrer once per referred buyer
+            $descCheck = 'Referral reward from user ' . $_SESSION['customer']['cust_id'];
+            $chk = $pdo->prepare("SELECT id FROM tbl_wallet_transactions WHERE cust_id = ? AND description = ? LIMIT 1");
+            $chk->execute([$referrerId, $descCheck]);
+            $already = $chk->fetch(PDO::FETCH_ASSOC);
+            if ($already) {
+                error_log("Referral debug: referrer {$referrerId} already rewarded for buyer {$_SESSION['customer']['cust_id']}");
             } else {
-                error_log("Referral debug: failed to insert wallet transaction for referrer {$referrerId}");
+                // credit the referrer's wallet (safe upsert)
+                $pdo->beginTransaction();
+                $stmtW = $pdo->prepare("INSERT INTO tbl_wallet (cust_id, balance) VALUES (?, ?) ON DUPLICATE KEY UPDATE balance = balance + VALUES(balance)");
+                $stmtW->execute([$referrerId, $refAmount]);
+
+                // log wallet transaction for referrer
+                $txRef = 'REFR_' . uniqid();
+                $desc = $descCheck;
+                $stmtTx = $pdo->prepare("INSERT INTO tbl_wallet_transactions (cust_id, amount, type, description, ref) VALUES (?, ?, 'credit', ?, ?)");
+                $okTx = $stmtTx->execute([$referrerId, $refAmount, $desc, $txRef]);
+                if ($okTx) {
+                    error_log("Referral debug: credited referrer {$referrerId} amount={$refAmount} txref={$txRef}");
+                } else {
+                    error_log("Referral debug: failed to insert wallet transaction for referrer {$referrerId}");
+                }
+                $pdo->commit();
             }
-            $pdo->commit();
         }
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
