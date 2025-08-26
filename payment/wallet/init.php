@@ -249,6 +249,47 @@ try {
     // Commit all changes
     $pdo->commit();
 
+    // After successful commit, attempt to credit referrer (if any)
+    try {
+        // get referrer id for this buyer
+        $stmtRef = $pdo->prepare("SELECT cust_referred_by FROM tbl_customer WHERE cust_id = ? LIMIT 1");
+        $stmtRef->execute([$_SESSION['customer']['cust_id']]);
+        $refRow = $stmtRef->fetch(PDO::FETCH_ASSOC);
+        $referrerId = $refRow['cust_referred_by'] ?? null;
+
+        // load referral_amount from settings (default 0)
+        $refAmount = 0.00;
+        $st = $pdo->prepare("SELECT referral_amount FROM tbl_settings WHERE id = 1 LIMIT 1");
+        if ($st->execute()) {
+            $srow = $st->fetch(PDO::FETCH_ASSOC);
+            if ($srow && isset($srow['referral_amount'])) $refAmount = (float)$srow['referral_amount'];
+        }
+
+        // debug log
+        error_log("Referral debug: buyer_id={$_SESSION['customer']['cust_id']}, referrerId=" . var_export($referrerId, true) . ", refAmount=" . var_export($refAmount, true));
+
+        if ($referrerId && $refAmount > 0) {
+            // credit the referrer's wallet (safe upsert)
+            $pdo->beginTransaction();
+            $stmtW = $pdo->prepare("INSERT INTO tbl_wallet (cust_id, balance) VALUES (?, ?) ON DUPLICATE KEY UPDATE balance = balance + VALUES(balance)");
+            $stmtW->execute([$referrerId, $refAmount]);
+            // log wallet transaction for referrer
+            $txRef = 'REFR_' . uniqid();
+            $desc = 'Referral reward from user ' . $_SESSION['customer']['cust_id'];
+            $stmtTx = $pdo->prepare("INSERT INTO tbl_wallet_transactions (cust_id, amount, type, description, ref) VALUES (?, ?, 'credit', ?, ?)");
+            $okTx = $stmtTx->execute([$referrerId, $refAmount, $desc, $txRef]);
+            if ($okTx) {
+                error_log("Referral debug: credited referrer {$referrerId} amount={$refAmount} txref={$txRef}");
+            } else {
+                error_log("Referral debug: failed to insert wallet transaction for referrer {$referrerId}");
+            }
+            $pdo->commit();
+        }
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        error_log('Referral credit failed: ' . $e->getMessage());
+    }
+
     // Redirect to success page
     header('Location: ../../' . BASE_URL . 'payment_success.php');
     exit();

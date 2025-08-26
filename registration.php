@@ -87,6 +87,17 @@ if (isset($_POST['form1'])) {
         $cust_datetime = date('Y-m-d h:i:s');
         $cust_timestamp = time();
 
+            // capture referral code from query param if present
+            $referred_by = null;
+            if (!empty($_GET['ref'])) {
+                $ref_code = preg_replace('/[^A-Za-z0-9_\-]/', '', $_GET['ref']);
+                // lookup referrer id
+                $st = $pdo->prepare("SELECT cust_id FROM tbl_customer WHERE cust_referral_code = ? LIMIT 1");
+                $st->execute([$ref_code]);
+                $r = $st->fetch(PDO::FETCH_ASSOC);
+                if ($r) $referred_by = (int)$r['cust_id'];
+            }
+
         // saving into the database
         $statement = $pdo->prepare("INSERT INTO tbl_customer (
                                         cust_name,
@@ -152,6 +163,14 @@ if (isset($_POST['form1'])) {
                                         $cust_timestamp,
                                         0
                                     ));
+
+        // After insertion, generate a unique referral code for the new user and save referred_by
+        $newId = $pdo->lastInsertId();
+        if ($newId) {
+            $newRef = 'REF' . strtoupper(substr(md5($newId . time()), 0, 8));
+            $upd = $pdo->prepare("UPDATE tbl_customer SET cust_referral_code = ?, cust_referred_by = ? WHERE cust_id = ?");
+            $upd->execute([$newRef, $referred_by, $newId]);
+        }
 
         // Send email for confirmation of the account
         $to = $_POST['cust_email'];
