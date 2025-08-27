@@ -6,7 +6,7 @@ require 'PHPMailer/src/Exception.php';
 require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
 
-function sendMail($to, $subject, $body, $altBody = '', $admin_email = '', $cc = [], $bcc = [], $replyTo = [])
+function sendMail($to, $subject, $body, $altBody = '', $admin_email = '', $attachments = [], $cc = [], $bcc = [], $replyTo = [])
 {
     $mail = new PHPMailer(true);
 
@@ -34,6 +34,22 @@ function sendMail($to, $subject, $body, $altBody = '', $admin_email = '', $cc = 
         }
 
         $mail->addAddress($to);
+
+        // Attachments support - $attachments may be array of file paths or arrays with ['path'=>..., 'name'=>...]
+        if (!empty($attachments) && is_array($attachments)) {
+            foreach ($attachments as $att) {
+                if (is_array($att)) {
+                    $path = $att['path'] ?? null;
+                    $name = $att['name'] ?? null;
+                } else {
+                    $path = $att;
+                    $name = null;
+                }
+                if ($path && file_exists($path)) {
+                    if ($name) $mail->addAttachment($path, $name); else $mail->addAttachment($path);
+                }
+            }
+        }
 
         // CC
         if (!empty($cc)) {

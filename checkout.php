@@ -324,6 +324,7 @@ if (!isset($_SESSION['cart_p_id'])) {
                                         <select name="payment_method" class="form-control select2" id="advFieldsStatus">
                                             <option value=""><?php echo LANG_VALUE_35; ?></option>
                                             <option value="PayPal"><?php echo LANG_VALUE_36; ?></option>
+                                            <option value="Paystack">Paystack</option>
                                             <option value="Wallet">Wallet</option>
                                             <option value="Bank Deposit"><?php echo LANG_VALUE_38; ?></option>
                                         </select>
@@ -339,6 +340,17 @@ if (!isset($_SESSION['cart_p_id'])) {
                                         <input type="hidden" name="final_total" value="<?php echo $final_total; ?>">
                                         <div class="col-md-12 form-group">
                                             <input type="submit" class="btn btn-primary" value="<?php echo LANG_VALUE_46; ?>" name="form1">
+                                        </div>
+                                    </form>
+
+
+                                    <!-- Paystack Card Payment form (uses inline JS) -->
+                                    <form id="paystack_form" method="post" action="#">
+                                        <input type="hidden" name="amount" id="paystack_amount" value="<?php echo $final_total; ?>">
+                                        <input type="hidden" name="email" id="paystack_email" value="<?php echo htmlspecialchars($_SESSION['customer']['cust_email']); ?>">
+                                        <input type="hidden" name="name" id="paystack_name" value="<?php echo htmlspecialchars($_SESSION['customer']['cust_name']); ?>">
+                                        <div class="col-md-12 form-group">
+                                            <button type="button" id="paystack_btn" class="btn btn-primary">Pay with Card (Paystack)</button>
                                         </div>
                                     </form>
 

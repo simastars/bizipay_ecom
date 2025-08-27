@@ -1,3 +1,15 @@
+<!-- Paystack inline script -->
+<?php
+// load paystack public key from settings (if present)
+$ps_public = '';
+$stmp = $pdo->prepare("SELECT paystack_public_key FROM tbl_settings WHERE id=1");
+$stmp->execute();
+$prow = $stmp->fetch(PDO::FETCH_ASSOC);
+if ($prow && !empty($prow['paystack_public_key'])) $ps_public = $prow['paystack_public_key'];
+?>
+<?php if(!empty($ps_public)): ?>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<?php endif; ?>
 <?php
 $statement = $pdo->prepare("SELECT * FROM tbl_settings WHERE id=1");
 $statement->execute();
@@ -170,6 +182,7 @@ foreach ($result as $row) {
 		$('#stripe_form').hide();
 		$('#bank_form').hide();
 		$('#wallet_form').hide();
+		$('#paystack_form').hide();
 
         $('#advFieldsStatus').on('change',function() {
             advFieldsStatus = $('#advFieldsStatus').val();
@@ -195,8 +208,56 @@ foreach ($result as $row) {
 				$('#stripe_form').hide();
 				$('#bank_form').hide();
 				$('#wallet_form').show();
+				} else if ( advFieldsStatus == 'Paystack' ) {
+					$('#paypal_form').hide();
+					$('#stripe_form').hide();
+					$('#bank_form').hide();
+					$('#wallet_form').hide();
+					$('#paystack_form').show();
             }
         });
+
+			// Paystack button handler
+			<?php if(!empty($ps_public)): ?>
+			$(document).on('click', '#paystack_btn', function (e) {
+				e.preventDefault();
+				var amount = parseFloat($('#paystack_amount').val()) || 0;
+				var email = $('#paystack_email').val();
+				var name = $('#paystack_name').val();
+				if (amount <= 0) {
+					alert('Invalid amount');
+					return;
+				}
+				var handler = PaystackPop.setup({
+					key: '<?php echo $ps_public; ?>',
+					email: email,
+					amount: Math.round(amount * 100),
+					currency: 'NGN',
+					ref: 'PSK_' + Math.floor((Math.random() * 1000000000) + 1),
+					metadata: {
+						custom_fields: [
+							{ display_name: "Customer Name", variable_name: "customer_name", value: name }
+						]
+					},
+					callback: function(response){
+						// send reference to server for verification and order creation
+						$.post('payment/paystack/verify.php', { reference: response.reference }, function(data){
+							if (data && data.status === 'success') {
+								window.location.href = '<?php echo BASE_URL; ?>payment_success.php';
+							} else {
+								alert('Payment verification failed: ' + (data && data.message ? data.message : 'Unknown'));
+							}
+						}, 'json').fail(function(){
+							alert('Server error while verifying payment');
+						});
+					},
+					onClose: function(){
+						// user closed payment modal
+					}
+				});
+				handler.openIframe();
+			});
+			<?php endif; ?>
 	});
 
 

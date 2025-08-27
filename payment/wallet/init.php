@@ -19,7 +19,7 @@ $posted_amount = isset($_POST['amount']) ? round(floatval($_POST['amount']), 2) 
 $table_total_price = 0.0;
 if (!isset($_SESSION['cart_p_id']) || !is_array($_SESSION['cart_p_id']) || count($_SESSION['cart_p_id']) == 0) {
     $_SESSION['error_message'] = 'Your cart is empty.';
-    header('Location: ' . BASE_URL . 'cart.php');
+    header('Location: ../../' . BASE_URL . 'cart.php');
     exit;
 }
 
@@ -301,6 +301,93 @@ try {
     }
 
     // Redirect to success page
+    // Determine currency symbol (fallback if LANG_VALUE_1 not defined)
+    $currency_symbol = '₦';
+    try {
+        $stt = $pdo->prepare("SELECT * FROM tbl_settings WHERE id=1 LIMIT 1");
+        $stt->execute();
+        $srow_all = $stt->fetch(PDO::FETCH_ASSOC);
+        if ($srow_all) {
+            if (!empty($srow_all['currency_symbol'])) {
+                $currency_symbol = $srow_all['currency_symbol'];
+            } elseif (!empty($srow_all['currency'])) {
+                $currency_symbol = $srow_all['currency'];
+            } elseif (defined('LANG_VALUE_1')) {
+                $currency_symbol = LANG_VALUE_1;
+            }
+        } elseif (defined('LANG_VALUE_1')) {
+            $currency_symbol = LANG_VALUE_1;
+        }
+    } catch (Exception $e) {
+        if (defined('LANG_VALUE_1')) $currency_symbol = LANG_VALUE_1;
+    }
+
+    // Build full order details HTML for email body and attachment
+    $orderHtml = '<html><body>';
+    $orderHtml .= '<h2>Order Receipt</h2>';
+    $orderHtml .= '<p><strong>Order ID:</strong> ' . htmlentities($item_number) . '</p>';
+    $orderHtml .= '<p><strong>Customer:</strong> ' . htmlentities($_SESSION['customer']['cust_name']) . ' (' . htmlentities($_SESSION['customer']['cust_email']) . ')</p>';
+    $orderHtml .= '<p><strong>Amount Paid:</strong> ' . $currency_symbol . number_format($item_amount,2) . '</p>';
+    $orderHtml .= '<p><strong>Transaction Ref:</strong> ' . htmlentities($ref) . '</p>';
+    $orderHtml .= '<h3>Items</h3>';
+    $orderHtml .= '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;width:100%">';
+    $orderHtml .= '<tr><th>Product</th><th>Size</th><th>Color</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>';
+    // Attach order rows
+    $statement = $pdo->prepare("SELECT * FROM tbl_order WHERE payment_id = ?");
+    $statement->execute(array($item_number));
+    $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as $r) {
+        $lineTotal = $r['unit_price'] * $r['quantity'];
+        $orderHtml .= '<tr>';
+        $orderHtml .= '<td>' . htmlentities($r['product_name']) . '</td>';
+        $orderHtml .= '<td>' . htmlentities($r['size']) . '</td>';
+        $orderHtml .= '<td>' . htmlentities($r['color']) . '</td>';
+        $orderHtml .= '<td>' . intval($r['quantity']) . '</td>';
+    $orderHtml .= '<td>' . $currency_symbol . number_format($r['unit_price'],2) . '</td>';
+    $orderHtml .= '<td>' . $currency_symbol . number_format($lineTotal,2) . '</td>';
+        $orderHtml .= '</tr>';
+    }
+    $orderHtml .= '</table>';
+    $orderHtml .= '</body></html>';
+
+    // Save HTML to temp file for attachment
+    $tmpDir = sys_get_temp_dir();
+    $attachmentPath = tempnam($tmpDir, 'order_') . '.html';
+    file_put_contents($attachmentPath, $orderHtml);
+
+    // Send mail via PHPMailer wrapper (sendMail)
+    try {
+        $to = $_SESSION['customer']['cust_email'] ?? null;
+        if ($to) {
+            // get contact email for From header
+            $contact_email = '';
+            $st = $pdo->prepare("SELECT contact_email FROM tbl_settings WHERE id=1 LIMIT 1");
+            if ($st->execute()) {
+                $srow = $st->fetch(PDO::FETCH_ASSOC);
+                if ($srow && !empty($srow['contact_email'])) $contact_email = $srow['contact_email'];
+            }
+
+            $subject = 'Payment received - Order #' . $item_number;
+
+            // call sendMail with the attachment
+            if (function_exists('sendMail')) {
+                $ok = sendMail($to, $subject, $orderHtml, '', $contact_email, [ ['path' => $attachmentPath, 'name' => 'order-' . $item_number . '.html'] ] );
+                if ($ok) {
+                    error_log('Wallet payment: PHPMailer confirmation sent to ' . $to . ' for order ' . $item_number);
+                } else {
+                    error_log('Wallet payment: failed to send PHPMailer confirmation to ' . $to . ' for order ' . $item_number);
+                }
+            } else {
+                error_log('sendMail() not available to send order email');
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Wallet payment: email send exception: ' . $e->getMessage());
+    } finally {
+        // cleanup temp attachment
+        if (isset($attachmentPath) && file_exists($attachmentPath)) unlink($attachmentPath);
+    }
+
     header('Location: ../../' . BASE_URL . 'payment_success.php');
     exit();
 
