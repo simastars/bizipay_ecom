@@ -175,6 +175,8 @@ if($success_message != '') {
                             <b>Name:</b><br> <?php echo $row['customer_name']; ?><br>
                             <b>Email:</b><br> <?php echo $row['customer_email']; ?><br><br>
                             <a href="#" data-toggle="modal" data-target="#model-<?php echo $i; ?>"class="btn btn-warning btn-xs" style="width:100%;margin-bottom:4px;">Send Message</a>
+                            <a href="#" data-toggle="modal" data-target="#track-<?php echo $i; ?>" class="btn btn-info btn-xs" style="width:100%;margin-bottom:4px;">Track</a>
+                            <a href="#" data-toggle="modal" data-target="#viewmsg-<?php echo $i; ?>" class="btn btn-primary btn-xs" style="width:100%;margin-bottom:4px;">View Messages</a>
                             <div id="model-<?php echo $i; ?>" class="modal fade" role="dialog">
 								<div class="modal-dialog">
 									<div class="modal-content">
@@ -212,6 +214,93 @@ if($success_message != '') {
 									</div>
 								</div>
 							</div>
+                            
+                                                    <!-- Track Modal -->
+                                                    <div id="track-<?php echo $i; ?>" class="modal fade" role="dialog">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                                        <h4 class="modal-title" style="font-weight: bold;">Order Tracking</h4>
+                                                    </div>
+                                                    <div class="modal-body" style="font-size: 14px">
+                                                        <?php
+                                                        // Include helper and show history
+                                                        require_once __DIR__ . '/../inc/order-tracking.php';
+                                                        $history = ot_get_history($pdo, $row['payment_id']);
+                                                        if(empty($history)){
+                                                            echo '<p>No history yet.</p>';
+                                                        } else {
+                                                            echo '<ul class="list-group">';
+                                                            foreach($history as $h){
+                                                                echo '<li class="list-group-item"><strong>'.htmlentities($h['status_type']).':</strong> '.htmlentities($h['status_value']).' <br><small>'.htmlentities($h['note']).' - '.htmlentities($h['changed_by']).' @ '.htmlentities($h['created_at']).'</small></li>';
+                                                            }
+                                                            echo '</ul>';
+                                                        }
+                                                        ?>
+                                                        <hr>
+                                                        <form action="order-track-action.php" method="post">
+                                                            <input type="hidden" name="payment_id" value="<?php echo htmlentities($row['payment_id']); ?>">
+                                                            <div class="form-group">
+                                                                <label>Type</label>
+                                                                <select name="status_type" class="form-control">
+                                                                    <option value="payment_status">Payment Status</option>
+                                                                    <option value="shipping_status">Shipping Status</option>
+                                                                    <option value="note">Note</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="form-group">
+                                                                <label>Value</label>
+                                                                <input type="text" name="status_value" class="form-control" required>
+                                                            </div>
+                                                            <div class="form-group">
+                                                                <label>Note (optional)</label>
+                                                                <textarea name="note" class="form-control"></textarea>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-primary">Save</button>
+                                                        </form>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                            
+                                        <!-- View Messages Modal -->
+                                        <div id="viewmsg-<?php echo $i; ?>" class="modal fade" role="dialog">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                                        <h4 class="modal-title" style="font-weight: bold;">Messages for Order <?php echo htmlentities($row['payment_id']); ?></h4>
+                                                    </div>
+                                                    <div class="modal-body" style="font-size: 14px">
+                                                        <?php
+                                                        // Fetch messages for this customer where order_detail references this payment id
+                                                        $stmtMsg = $pdo->prepare("SELECT * FROM tbl_customer_message WHERE cust_id = ? AND order_detail LIKE ? ORDER BY customer_message_id DESC");
+                                                        $like = '%' . $row['payment_id'] . '%';
+                                                        $stmtMsg->execute(array($row['customer_id'], $like));
+                                                        $msgs = $stmtMsg->fetchAll(PDO::FETCH_ASSOC);
+                                                        if (empty($msgs)) {
+                                                            echo '<p>No messages found for this order.</p>';
+                                                        } else {
+                                                            foreach ($msgs as $m) {
+                                                                echo '<div style="border:1px solid #eee;padding:10px;margin-bottom:10px;">';
+                                                                echo '<strong>Subject:</strong> ' . htmlentities($m['subject']) . '<br><br>';
+                                                                echo '<strong>Message:</strong><br>' . nl2br(htmlentities($m['message'])) . '<br><br>';
+                                                                echo '<strong>Order Detail:</strong><br>' . nl2br(htmlentities($m['order_detail'])) . '<br>';
+                                                                echo '</div>';
+                                                            }
+                                                        }
+                                                        ?>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                         </td>
                         <td>
                            <?php

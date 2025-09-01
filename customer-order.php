@@ -170,7 +170,11 @@ if(!isset($_SESSION['customer'])) {
                                         <td><?php echo '$'.$row['paid_amount']; ?></td>
                                         <td><?php echo $row['payment_status']; ?></td>
                                         <td><?php echo $row['payment_method']; ?></td>
-                                        <td><?php echo $row['payment_id']; ?></td>
+                                        <td>
+                                            <?php echo $row['payment_id']; ?>
+                                            <br>
+                                            <a href="track-order.php?payment_id=<?php echo urlencode($row['payment_id']); ?>" class="btn btn-info btn-xs" style="margin-top:6px;">Track</a>
+                                        </td>
                                     </tr>
                                     <?php
                                 } 

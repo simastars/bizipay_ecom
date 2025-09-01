@@ -70,10 +70,18 @@
 						</thead>
 						<tbody>
 							<?php
-							$i=0;
-							$statement = $pdo->prepare("SELECT * FROM tbl_customer_message WHERE cust_id=?");
-							$statement->execute(array($_POST['cust_id']));
+							$i = 0;
+							$selected_cust = isset($_POST['cust_id']) ? (int)$_POST['cust_id'] : 0;
+							// Diagnostic log for debugging why admin may not see messages
+							error_log('[admin/customer-message] Selected cust_id=' . $selected_cust);
+
+							$statement = $pdo->prepare("SELECT * FROM tbl_customer_message WHERE cust_id = ?");
+							$statement->execute(array($selected_cust));
 							$result = $statement->fetchAll(PDO::FETCH_ASSOC);
+							$found = count($result);
+							// show a small admin info so you can spot mismatches quickly
+							echo '<tr><td colspan="4"><div class="alert alert-info">Selected cust_id: ' . htmlentities($selected_cust) . ' — messages found: ' . htmlentities($found) . ' &nbsp; <a href="debug-customer-messages.php?cust_id=' . urlencode($selected_cust) . '" target="_blank">Open debug view</a></div></td></tr>';
+
 							foreach ($result as $row) {
 								$i++;
 								?>

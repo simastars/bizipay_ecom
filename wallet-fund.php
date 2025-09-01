@@ -7,7 +7,9 @@ if(!isset($_SESSION['customer'])) {
     exit;
 }
 $cust_id = $_SESSION['customer']['cust_id'];
+require_once './customer-sidebar.php';
 ?>
+
 <div class="container" style="max-width:500px;margin:40px auto;">
     <h3>Fund Your Wallet</h3>
     <form id="fundWalletForm" method="POST">

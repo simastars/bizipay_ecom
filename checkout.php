@@ -25,7 +25,7 @@ if (!isset($_SESSION['cart_p_id'])) {
 <div class="page">
     <div class="container">
                 <p>
-                    <h3 style="margin-top:10px;" class="text-danger"><?php echo $_SESSION['error_message']; ?></h3>
+                    <h3 style="margin-top:10px;" class="text-danger"><?php if(isset($_SESSION['error_message'])) echo $_SESSION['error_message']; ?></h3>
                 </p>
     </div>
 </div>
