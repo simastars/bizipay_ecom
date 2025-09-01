@@ -3,7 +3,6 @@
 <section class="content-header">
 	<h1>Dashboard</h1>
 </section>
-
 <?php
 $statement = $pdo->prepare("SELECT * FROM tbl_top_category");
 $statement->execute();
@@ -58,7 +57,6 @@ $total_order_complete_shipping_pending = $statement->rowCount();
 		.quick-action .btn { margin:6px 6px 6px 0 }
 		.small-muted { color:#8a8a8a;font-size:13px }
 	</style>
-
 	<div class="row">
 		<div class="col-md-8">
 			<div class="dashboard-card">
@@ -170,5 +168,4 @@ $total_order_complete_shipping_pending = $statement->rowCount();
 	</div>
 
 </section>
-
 <?php require_once('footer.php'); ?>
