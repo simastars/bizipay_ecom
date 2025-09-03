@@ -45,10 +45,10 @@ foreach ($result as $row) {
         <div class="text">
             <h3><a href="product.php?id=<?php echo $row['p_id']; ?>"><?php echo htmlspecialchars($row['p_name'], ENT_QUOTES); ?></a></h3>
             <h4>
-                $<?php echo htmlspecialchars($row['p_current_price'], ENT_QUOTES); ?>
+                &#8358;<?php echo htmlspecialchars($row['p_current_price'], ENT_QUOTES); ?>
                 <?php if($row['p_old_price'] != ''): ?>
                 <del>
-                    $<?php echo htmlspecialchars($row['p_old_price'], ENT_QUOTES); ?>
+                    &#8358;<?php echo htmlspecialchars($row['p_old_price'], ENT_QUOTES); ?>
                 </del>
                 <?php endif; ?>
             </h4>
