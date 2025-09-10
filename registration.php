@@ -15,8 +15,17 @@ foreach ($result as $row) {
 
 <?php
 if (isset($_POST['form1'])) {
+    // debug: log incoming POST to help diagnose silent failures
+    file_put_contents(__DIR__ . '/registration_debug.log', date('c') . " POST:" . json_encode($_POST) . "\n", FILE_APPEND);
 
     $valid = 1;
+
+    // CSRF token check (non-fatal) - prefer graceful error over die()
+    if (empty($_POST['_csrf']) || !$csrf->isTokenValid($_POST['_csrf'])) {
+        $valid = 0;
+        $error_message .= 'Invalid form submission (CSRF). Please try again.' . "<br>";
+        file_put_contents(__DIR__ . '/registration_debug.log', date('c') . " CSRF_INVALID\n", FILE_APPEND);
+    }
 
     if(empty($_POST['cust_name'])) {
         $valid = 0;
@@ -84,10 +93,10 @@ if (isset($_POST['form1'])) {
     }
 
     if($valid == 1) {
-
-        $token = md5(time());
-        $cust_datetime = date('Y-m-d h:i:s');
-        $cust_timestamp = time();
+        try {
+            $token = md5(time());
+            $cust_datetime = date('Y-m-d h:i:s');
+            $cust_timestamp = time();
 
             // capture referral code from query param if present
             $referred_by = null;
@@ -100,8 +109,8 @@ if (isset($_POST['form1'])) {
                 if ($r) $referred_by = (int)$r['cust_id'];
             }
 
-        // saving into the database
-        $statement = $pdo->prepare("INSERT INTO tbl_customer (
+            // saving into the database
+            $statement = $pdo->prepare("INSERT INTO tbl_customer (
                                         cust_name,
                                         cust_cname,
                                         cust_email,
@@ -133,7 +142,7 @@ if (isset($_POST['form1'])) {
                                         cust_timestamp,
                                         cust_status
                                     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-        $statement->execute(array(
+            $statement->execute(array(
                                         strip_tags($_POST['cust_name']),
                                         strip_tags($_POST['cust_cname']),
                                         strip_tags($_POST['cust_email']),
@@ -166,108 +175,112 @@ if (isset($_POST['form1'])) {
                                         0
                                     ));
 
-        // After insertion, generate a unique referral code for the new user and save referred_by
-        $newId = $pdo->lastInsertId();
-        if ($newId) {
-            $newRef = 'REF' . strtoupper(substr(md5($newId . time()), 0, 8));
-            $upd = $pdo->prepare("UPDATE tbl_customer SET cust_referral_code = ?, cust_referred_by = ? WHERE cust_id = ?");
-            $upd->execute([$newRef, $referred_by, $newId]);
-        }
-
-        // Attempt to reserve a dedicated virtual account for the new customer (Billstack)
-        try {
-            $va_reference = 'CUSTVA-' . $newId . '-' . time();
-            $va_payload = [
-                'email' => strip_tags($_POST['cust_email']),
-                'reference' => $va_reference,
-                'firstName' => strip_tags($_POST['cust_name']),
-                'lastName' => strip_tags($_POST['cust_cname']),
-                'phone' => strip_tags($_POST['cust_phone']),
-                // default bank; change as required or expose to user later
-                'bank' => 'PALMPAY'
-            ];
-
-            $ch = curl_init(BILLSTACK_VA_RESERVE_URL);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . BILLSTACK_API_KEY
-            ]);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($va_payload));
-            $resp = curl_exec($ch);
-            $cerr = curl_error($ch);
-            curl_close($ch);
-
-            if ($cerr) {
-                // log the error but don't block registration
-                $log = fopen(__DIR__ . '/payment/virtual_account/create_va_errors.log', 'a');
-                fwrite($log, date('c') . " CURL_ERR: " . $cerr . "\n");
-                fclose($log);
-            } else {
-                $respData = json_decode($resp, true);
-                if ($respData && isset($respData['status']) && $respData['status']) {
-                    $accountInfo = $respData['data']['account'][0] ?? null;
-                    $reference = $respData['data']['reference'] ?? $va_reference;
-                    if ($accountInfo) {
-                        $ins = $pdo->prepare("INSERT INTO tbl_virtual_account (cust_id, reference, account_number, account_name, bank_name, bank_id, meta, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                        $ins->execute([
-                            $newId,
-                            $reference,
-                            $accountInfo['account_number'],
-                            $accountInfo['account_name'] ?? null,
-                            $accountInfo['bank_name'] ?? null,
-                            $accountInfo['bank_id'] ?? null,
-                            json_encode($respData['data']['meta'] ?? []),
-                            'reserved'
-                        ]);
-                    }
-                } else {
-                    $log = fopen(__DIR__ . '/payment/virtual_account/create_va_errors.log', 'a');
-                    fwrite($log, date('c') . " PROVIDER_ERR: " . json_encode($respData) . "\n");
-                    fclose($log);
-                }
+            // After insertion, generate a unique referral code for the new user and save referred_by
+            $newId = $pdo->lastInsertId();
+            if ($newId) {
+                $newRef = 'REF' . strtoupper(substr(md5($newId . time()), 0, 8));
+                $upd = $pdo->prepare("UPDATE tbl_customer SET cust_referral_code = ?, cust_referred_by = ? WHERE cust_id = ?");
+                $upd->execute([$newRef, $referred_by, $newId]);
             }
-        } catch (Exception $e) {
-            $log = fopen(__DIR__ . '/payment/virtual_account/create_va_errors.log', 'a');
-            fwrite($log, date('c') . " EXC: " . $e->getMessage() . "\n");
-            fclose($log);
-        }
 
-        // Send email for confirmation of the account
-        $to = $_POST['cust_email'];
-        
-        $subject = LANG_VALUE_150;
-        $verify_link = BASE_URL.'verify.php?email='.$to.'&token='.$token;
-        $message = '
+            // Attempt to reserve a dedicated virtual account for the new customer (Billstack)
+            try {
+                $va_reference = 'CUSTVA-' . $newId . '-' . time();
+                $va_payload = [
+                    'email' => strip_tags($_POST['cust_email']),
+                    'reference' => $va_reference,
+                    'firstName' => strip_tags($_POST['cust_name']),
+                    'lastName' => strip_tags($_POST['cust_cname']),
+                    'phone' => strip_tags($_POST['cust_phone']),
+                    // default bank; change as required or expose to user later
+                    'bank' => 'PALMPAY'
+                ];
+
+                $ch = curl_init(BILLSTACK_VA_RESERVE_URL);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . BILLSTACK_API_KEY
+                ]);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($va_payload));
+                $resp = curl_exec($ch);
+                $cerr = curl_error($ch);
+                curl_close($ch);
+
+                if ($cerr) {
+                    // log the error but don't block registration
+                    $log = fopen(__DIR__ . '/payment/virtual_account/create_va_errors.log', 'a');
+                    fwrite($log, date('c') . " CURL_ERR: " . $cerr . "\n");
+                    fclose($log);
+                } else {
+                    $respData = json_decode($resp, true);
+                    if ($respData && isset($respData['status']) && $respData['status']) {
+                        $accountInfo = $respData['data']['account'][0] ?? null;
+                        $reference = $respData['data']['reference'] ?? $va_reference;
+                        if ($accountInfo) {
+                            $ins = $pdo->prepare("INSERT INTO tbl_virtual_account (cust_id, reference, account_number, account_name, bank_name, bank_id, meta, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                            $ins->execute([
+                                $newId,
+                                $reference,
+                                $accountInfo['account_number'],
+                                $accountInfo['account_name'] ?? null,
+                                $accountInfo['bank_name'] ?? null,
+                                $accountInfo['bank_id'] ?? null,
+                                json_encode($respData['data']['meta'] ?? []),
+                                'reserved'
+                            ]);
+                        }
+                    } else {
+                        $log = fopen(__DIR__ . '/payment/virtual_account/create_va_errors.log', 'a');
+                        fwrite($log, date('c') . " PROVIDER_ERR: " . json_encode($respData) . "\n");
+                        fclose($log);
+                    }
+                }
+            } catch (Exception $e) {
+                $log = fopen(__DIR__ . '/payment/virtual_account/create_va_errors.log', 'a');
+                fwrite($log, date('c') . " EXC: " . $e->getMessage() . "\n");
+                fclose($log);
+            }
+
+            // Send email for confirmation of the account
+            $to = $_POST['cust_email'];
+            
+            $subject = LANG_VALUE_150;
+            $verify_link = BASE_URL.'verify.php?email='.$to.'&token='.$token;
+            $message = '
 '.LANG_VALUE_151.'<br><br>
 
 <a href="'.$verify_link.'">'.$verify_link.'</a>';
 
-        $headers = "From: noreply@" . BASE_URL . "\r\n" .
-                   "Reply-To: noreply@" . BASE_URL . "\r\n" .
-                   "X-Mailer: PHP/" . phpversion() . "\r\n" . 
-                   "MIME-Version: 1.0\r\n" . 
-                   "Content-Type: text/html; charset=ISO-8859-1\r\n";
-        
-        // Sending Email
+            $headers = "From: noreply@" . BASE_URL . "\r\n" .
+                       "Reply-To: noreply@" . BASE_URL . "\r\n" .
+                       "X-Mailer: PHP/" . phpversion() . "\r\n" . 
+                       "MIME-Version: 1.0\r\n" . 
+                       "Content-Type: text/html; charset=ISO-8859-1\r\n";
+            
+            // Sending Email
 
-         if(sendMail($to, $subject, $message, '','admin@gmail.com')){
+             if(sendMail($to, $subject, $message, '','admin@gmail.com')){
 $success_message = 'Your email to customer is sent successfully.';
-        } else {
+            } else {
 $error_message = 'Failed to send email to customer.';
 }
 
-        unset($_POST['cust_name']);
-        unset($_POST['cust_cname']);
-        unset($_POST['cust_email']);
-        unset($_POST['cust_phone']);
-        unset($_POST['cust_address']);
-        unset($_POST['cust_city']);
-        unset($_POST['cust_state']);
-        unset($_POST['cust_zip']);
+            unset($_POST['cust_name']);
+            unset($_POST['cust_cname']);
+            unset($_POST['cust_email']);
+            unset($_POST['cust_phone']);
+            unset($_POST['cust_address']);
+            unset($_POST['cust_city']);
+            unset($_POST['cust_state']);
+            unset($_POST['cust_zip']);
 
-        $success_message = LANG_VALUE_152;
+            $success_message = LANG_VALUE_152;
+        } catch (Exception $e) {
+            file_put_contents(__DIR__ . '/registration_debug.log', date('c') . " EXCEPTION: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n", FILE_APPEND);
+            $error_message .= 'An internal error occurred while creating your account. Please try again later.' . "<br>";
+        }
     }
 }
 ?>
