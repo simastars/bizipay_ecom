@@ -17,6 +17,27 @@ if(!isset($_SESSION['customer'])) {
 }
 ?>
 
+<?php
+// Fetch wallet balance
+$balance = 0.00;
+$stmt = $pdo->prepare("SELECT balance FROM tbl_wallet WHERE cust_id = ?");
+$stmt->execute([$_SESSION['customer']['cust_id']]);
+$wb = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($wb) $balance = $wb['balance'];
+
+// Fetch recent orders (simple example)
+$recentOrders = [];
+$stmt = $pdo->prepare("SELECT * FROM tbl_payment WHERE customer_id = ? ORDER BY payment_date DESC LIMIT 5");
+$stmt->execute([$_SESSION['customer']['cust_id']]);
+$recentOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch user's virtual account if any
+$userVA = null;
+$stmt = $pdo->prepare("SELECT * FROM tbl_virtual_account WHERE cust_id = ? ORDER BY id DESC LIMIT 1");
+$stmt->execute([$_SESSION['customer']['cust_id']]);
+$userVA = $stmt->fetch(PDO::FETCH_ASSOC);
+?>
+
 <style>
 /* dashboard styles */
 .dashboard-card { border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.06); padding:18px; background:#fff; }
@@ -92,6 +113,38 @@ if(!isset($_SESSION['customer'])) {
                         </div>
                     </div>
 
+                    <!-- Virtual Account Card -->
+                    <div class="row" style="margin-top:18px;">
+                        <div class="col-md-12">
+                            <div class="dashboard-card">
+                                <h4 style="margin-top:0;">Virtual Account</h4>
+                                <?php if($userVA): ?>
+                                    <div style="padding:12px; border:1px solid #eee; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                                        <div>
+                                            <div><strong>Account Number:</strong> <span id="va_account_number"><?php echo htmlentities($userVA['account_number']); ?></span></div>
+                                            <div><strong>Account Name:</strong> <?php echo htmlentities($userVA['account_name']); ?></div>
+                                            <div><strong>Bank:</strong> <?php echo htmlentities($userVA['bank_name']); ?></div>
+                                            <div><strong>Status:</strong> <?php echo htmlentities($userVA['status']); ?></div>
+                                            <div style="margin-top:6px;font-size:12px;color:#666;">Created: <?php echo htmlentities($userVA['created_at']); ?></div>
+                                        </div>
+                                        <div style="text-align:right;">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="copyAccount()">Copy</button>
+                                            <?php if($userVA['status'] != 'kyc_validated'): ?>
+                                                <div style="margin-top:8px;"><button class="btn btn-sm btn-warning" onclick="showBvnPrompt()">Bind BVN</button></div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <div style="padding:12px; border:1px dashed #eee; border-radius:6px;">
+                                        <p>No virtual account found for your profile.</p>
+                                        <button class="btn btn-sm btn-primary" id="request_va_btn">Request Virtual Account</button>
+                                        <div id="request_va_status" style="margin-top:8px;"></div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row" style="margin-top:20px;">
                         <div class="col-md-8">
                             <div class="dashboard-card">
@@ -144,3 +197,67 @@ if(!isset($_SESSION['customer'])) {
 </div>
 
 <?php require_once('footer.php'); ?>
+
+<script>
+function copyAccount(){
+    var acc = document.getElementById('va_account_number').innerText;
+    navigator.clipboard.writeText(acc).then(function(){
+        alert('Account number copied');
+    }, function(){
+        alert('Copy failed');
+    });
+}
+
+document.getElementById('request_va_btn')?.addEventListener('click', function(){
+    var btn = this;
+    btn.disabled = true;
+    document.getElementById('request_va_status').innerText = 'Requesting...';
+    var payload = {
+        email: '<?php echo addslashes($_SESSION['customer']['cust_email']); ?>',
+        reference: 'CUSTVA-<?php echo $_SESSION['customer']['cust_id']; ?>-' + Date.now(),
+        firstName: '<?php echo addslashes($_SESSION['customer']['cust_name']); ?>',
+        lastName: '<?php echo addslashes($_SESSION['customer']['cust_cname']); ?>',
+        phone: '<?php echo addslashes($_SESSION['customer']['cust_phone']); ?>',
+        bank: 'PALMPAY',
+        cust_id: <?php echo (int)$_SESSION['customer']['cust_id']; ?>
+    };
+
+    fetch('payment/virtual_account/create_virtual_account.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    }).then(res=>res.json()).then(data=>{
+        if(data.status){
+            document.getElementById('request_va_status').innerText = 'Virtual account created. Reloading...';
+            setTimeout(()=>location.reload(),1200);
+        } else {
+            document.getElementById('request_va_status').innerText = 'Error: ' + (data.message || JSON.stringify(data));
+            btn.disabled = false;
+        }
+    }).catch(err=>{
+        document.getElementById('request_va_status').innerText = 'Request failed';
+        btn.disabled = false;
+    });
+});
+
+function showBvnPrompt(){
+    var bvn = prompt('Enter your BVN to bind to this virtual account');
+    if(!bvn) return;
+    // send to bind_kyc
+    fetch('payment/virtual_account/bind_kyc.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ virtual_account_id: <?php echo (int)$userVA['id'] ?? 0; ?>, bvn: bvn })
+    }).then(async res=>{
+        // try parse json
+        let text = await res.text();
+        try {
+            let data = JSON.parse(text);
+            alert('Response: ' + (data.message || JSON.stringify(data)));
+            if(data.status) setTimeout(()=>location.reload(),800);
+        } catch(e) {
+            alert('Bind failed. Response: ' + text);
+        }
+    }).catch(err=>{ alert('Bind failed: ' + err.message); });
+}
+</script>

@@ -1,4 +1,6 @@
-<?php require_once('header.php'); 
+<?php 
+error_reporting(E_ALL);
+require_once('header.php'); 
 require_once("./mailer.php");
 ?>
 
@@ -170,6 +172,66 @@ if (isset($_POST['form1'])) {
             $newRef = 'REF' . strtoupper(substr(md5($newId . time()), 0, 8));
             $upd = $pdo->prepare("UPDATE tbl_customer SET cust_referral_code = ?, cust_referred_by = ? WHERE cust_id = ?");
             $upd->execute([$newRef, $referred_by, $newId]);
+        }
+
+        // Attempt to reserve a dedicated virtual account for the new customer (Billstack)
+        try {
+            $va_reference = 'CUSTVA-' . $newId . '-' . time();
+            $va_payload = [
+                'email' => strip_tags($_POST['cust_email']),
+                'reference' => $va_reference,
+                'firstName' => strip_tags($_POST['cust_name']),
+                'lastName' => strip_tags($_POST['cust_cname']),
+                'phone' => strip_tags($_POST['cust_phone']),
+                // default bank; change as required or expose to user later
+                'bank' => 'PALMPAY'
+            ];
+
+            $ch = curl_init(BILLSTACK_VA_RESERVE_URL);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . BILLSTACK_API_KEY
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($va_payload));
+            $resp = curl_exec($ch);
+            $cerr = curl_error($ch);
+            curl_close($ch);
+
+            if ($cerr) {
+                // log the error but don't block registration
+                $log = fopen(__DIR__ . '/payment/virtual_account/create_va_errors.log', 'a');
+                fwrite($log, date('c') . " CURL_ERR: " . $cerr . "\n");
+                fclose($log);
+            } else {
+                $respData = json_decode($resp, true);
+                if ($respData && isset($respData['status']) && $respData['status']) {
+                    $accountInfo = $respData['data']['account'][0] ?? null;
+                    $reference = $respData['data']['reference'] ?? $va_reference;
+                    if ($accountInfo) {
+                        $ins = $pdo->prepare("INSERT INTO tbl_virtual_account (cust_id, reference, account_number, account_name, bank_name, bank_id, meta, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                        $ins->execute([
+                            $newId,
+                            $reference,
+                            $accountInfo['account_number'],
+                            $accountInfo['account_name'] ?? null,
+                            $accountInfo['bank_name'] ?? null,
+                            $accountInfo['bank_id'] ?? null,
+                            json_encode($respData['data']['meta'] ?? []),
+                            'reserved'
+                        ]);
+                    }
+                } else {
+                    $log = fopen(__DIR__ . '/payment/virtual_account/create_va_errors.log', 'a');
+                    fwrite($log, date('c') . " PROVIDER_ERR: " . json_encode($respData) . "\n");
+                    fclose($log);
+                }
+            }
+        } catch (Exception $e) {
+            $log = fopen(__DIR__ . '/payment/virtual_account/create_va_errors.log', 'a');
+            fwrite($log, date('c') . " EXC: " . $e->getMessage() . "\n");
+            fclose($log);
         }
 
         // Send email for confirmation of the account

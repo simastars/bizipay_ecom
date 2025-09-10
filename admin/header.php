@@ -85,6 +85,32 @@ if(!isset($_SESSION['user'])) {
 		</header>
 
   		<?php $cur_page = substr($_SERVER["SCRIPT_NAME"],strrpos($_SERVER["SCRIPT_NAME"],"/")+1); ?>
+<?php
+// Counts for admin badges
+$va_total = 0;
+$va_pending_tx = 0;
+$va_kyc_pending = 0;
+$va_unmatched_tx = 0;
+try {
+	$st = $pdo->prepare("SELECT COUNT(*) FROM tbl_virtual_account");
+	$st->execute();
+	$va_total = (int)$st->fetchColumn();
+
+	$st2 = $pdo->prepare("SELECT COUNT(*) FROM tbl_virtual_account_tx WHERE status != 'credited'");
+	$st2->execute();
+	$va_pending_tx = (int)$st2->fetchColumn();
+	// kyc pending
+	$st3 = $pdo->prepare("SELECT COUNT(*) FROM tbl_virtual_account WHERE status = 'kyc_pending'");
+	$st3->execute();
+	$va_kyc_pending = (int)$st3->fetchColumn();
+	// unmatched tx: status = 'verified' (not credited) and not associated with wallet credit yet
+	$st4 = $pdo->prepare("SELECT COUNT(*) FROM tbl_virtual_account_tx WHERE status = 'verified'");
+	$st4->execute();
+	$va_unmatched_tx = (int)$st4->fetchColumn();
+} catch (Exception $e) {
+	// ignore - show zeros
+}
+?>
 <!-- Side Bar to Manage Shop Activities -->
   		<aside class="main-sidebar">
     		<section class="sidebar">
@@ -161,6 +187,26 @@ if(!isset($_SESSION['user'])) {
 			            <i class="fa fa-user-plus"></i> <span>Registered Customer</span>
 			          </a>
 			        </li>
+
+						<li class="treeview <?php if( ($cur_page == 'virtual-accounts.php') || ($cur_page == 'virtual-account-view.php') ) {echo 'active';} ?>">
+						  <a href="virtual-accounts.php">
+						    <i class="fa fa-bank"></i> <span>Virtual Accounts</span>
+						    <small class="label pull-right bg-aqua" style="margin-right:8px;"><?php echo $va_total; ?></small>
+						    <?php if($va_kyc_pending): ?>
+						      <small class="label pull-right bg-red" style="margin-right:4px;"><?php echo $va_kyc_pending; ?></small>
+						    <?php endif; ?>
+						  </a>
+						</li>
+
+						<li class="treeview <?php if( ($cur_page == 'va-reconcile.php') ) {echo 'active';} ?>">
+						  <a href="va-reconcile.php">
+						    <i class="fa fa-exchange"></i> <span>VA Reconcile</span>
+						    <small class="label pull-right bg-yellow" style="margin-right:8px;"><?php echo $va_pending_tx; ?></small>
+						    <?php if($va_unmatched_tx): ?>
+						      <small class="label pull-right bg-orange" style="margin-right:4px;"><?php echo $va_unmatched_tx; ?></small>
+						    <?php endif; ?>
+						  </a>
+						</li>
 
 			        <li class="treeview <?php if( ($cur_page == 'page.php') ) {echo 'active';} ?>">
 			          <a href="page.php">

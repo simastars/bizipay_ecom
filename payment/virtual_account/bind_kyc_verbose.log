@@ -1,0 +1,58 @@
+*   Trying 69.164.205.205:443...
+* Connected to api.billstack.co (69.164.205.205) port 443
+* ALPN: curl offers h2,http/1.1
+*  CAfile: C:\xampp\apache\bin\curl-ca-bundle.crt
+*  CApath: none
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: CN=www.internal.billstack.co
+*  start date: Aug  1 09:08:02 2025 GMT
+*  expire date: Oct 30 09:08:01 2025 GMT
+*  subjectAltName: host "api.billstack.co" matched cert's "*.billstack.co"
+*  issuer: C=US; O=Let's Encrypt; CN=R11
+*  SSL certificate verify ok.
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://api.billstack.co/v2/thirdparty/upgradeVirtualAccount/
+* [HTTP/2] [1] [:method: POST]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: api.billstack.co]
+* [HTTP/2] [1] [:path: /v2/thirdparty/upgradeVirtualAccount/]
+* [HTTP/2] [1] [accept: */*]
+* [HTTP/2] [1] [content-type: application/json]
+* [HTTP/2] [1] [authorization: Bearer Bill_Stack-SEC-KEY-75ec20ad590cb56ab6ffce8819bb07f5]
+* [HTTP/2] [1] [content-length: 56]
+> POST /v2/thirdparty/upgradeVirtualAccount/ HTTP/2
+Host: api.billstack.co
+Accept: */*
+Content-Type: application/json
+Authorization: Bearer Bill_Stack-SEC-KEY-75ec20ad590cb56ab6ffce8819bb07f5
+Content-Length: 56
+
+* Operation timed out after 30001 milliseconds with 0 bytes received
+* Connection #0 to host api.billstack.co left intact
+*   Trying 69.164.205.205:443...
+* Connected to api.billstack.co (69.164.205.205) port 443
+* ALPN: curl offers http/1.1
+*  CAfile: C:\xampp\apache\bin\curl-ca-bundle.crt
+*  CApath: none
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN: server accepted http/1.1
+* Server certificate:
+*  subject: CN=www.internal.billstack.co
+*  start date: Aug  1 09:08:02 2025 GMT
+*  expire date: Oct 30 09:08:01 2025 GMT
+*  subjectAltName: host "api.billstack.co" matched cert's "*.billstack.co"
+*  issuer: C=US; O=Let's Encrypt; CN=R11
+*  SSL certificate verify ok.
+* using HTTP/1.1
+> POST /v2/thirdparty/upgradeVirtualAccount/ HTTP/1.1
+Host: api.billstack.co
+Accept: */*
+Content-Type: application/json
+Authorization: Bearer Bill_Stack-SEC-KEY-75ec20ad590cb56ab6ffce8819bb07f5
+Connection: close
+Content-Length: 56
+
+* Operation timed out after 30002 milliseconds with 0 bytes received
+* Closing connection

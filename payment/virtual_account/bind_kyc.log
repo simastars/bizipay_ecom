@@ -1,0 +1,11 @@
+2025-09-05T15:37:23-07:00 CURL_ERR (28): Operation timed out after 30003 milliseconds with 0 bytes received
+Payload: {"customer":"muhdmuhd158@gmail.com","bvn":"22414490053"}
+
+2025-09-05T15:45:18-07:00 CURL_ERR (28): Operation timed out after 30001 milliseconds with 0 bytes received
+Payload: {"customer":"muhdmuhd158@gmail.com","bvn":"22414490053"}
+CURL_INFO: {"url":"https:\/\/api.billstack.co\/v2\/thirdparty\/upgradeVirtualAccount\/","content_type":null,"http_code":0,"header_size":0,"request_size":273,"filetime":-1,"ssl_verify_result":0,"redirect_count":0,"total_time":30.001559,"namelookup_time":0.013162,"connect_time":0.400747,"pretransfer_time":0.706126,"size_upload":56,"size_download":0,"speed_download":0,"speed_upload":1,"download_content_length":-1,"upload_content_length":56,"starttransfer_time":0,"redirect_time":0,"redirect_url":"","primary_ip":"69.164.205.205","certinfo":[],"primary_port":443,"local_ip":"10.54.173.217","local_port":60262,"http_version":0,"protocol":2,"ssl_verifyresult":0,"scheme":"HTTPS","appconnect_time_us":705862,"connect_time_us":400747,"namelookup_time_us":13162,"pretransfer_time_us":706126,"redirect_time_us":0,"starttransfer_time_us":0,"total_time_us":30001559,"effective_method":"POST"}
+
+2025-09-05T15:47:46-07:00 CURL_ERR (28): Operation timed out after 30002 milliseconds with 0 bytes received
+Payload: {"customer":"muhdmuhd158@gmail.com","bvn":"22414490053"}
+CURL_INFO: {"url":"https:\/\/api.billstack.co\/v2\/thirdparty\/upgradeVirtualAccount\/","content_type":null,"http_code":0,"header_size":0,"request_size":294,"filetime":-1,"ssl_verify_result":0,"redirect_count":0,"total_time":30.002987,"namelookup_time":0.002029,"connect_time":0.317711,"pretransfer_time":0.62874,"size_upload":56,"size_download":0,"speed_download":0,"speed_upload":1,"download_content_length":-1,"upload_content_length":56,"starttransfer_time":0,"redirect_time":0,"redirect_url":"","primary_ip":"69.164.205.205","certinfo":[],"primary_port":443,"local_ip":"10.54.173.217","local_port":56344,"http_version":0,"protocol":2,"ssl_verifyresult":0,"scheme":"HTTPS","appconnect_time_us":628604,"connect_time_us":317711,"namelookup_time_us":2029,"pretransfer_time_us":628740,"redirect_time_us":0,"starttransfer_time_us":0,"total_time_us":30002987,"effective_method":"POST"}
+
